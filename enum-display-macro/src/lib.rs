@@ -150,9 +150,15 @@ impl NamedVariantIR {
         let fields = self.fields;
         match (any_has_format, attrs.format) {
             (true, Some(fmt)) => {
-                quote! { #ident { #(#fields),* } => { let variant = #ident_transformed; format!(#fmt) } }
+                quote! {
+                    #ident { #(#fields),* } => enum_display::_variant_format!(#ident_transformed, #fmt),
+                }
             }
-            (true, None) => quote! { #ident { .. } => String::from(#ident_transformed), },
+            (true, None) => {
+                quote! {
+                    #ident { .. } => enum_display::_variant_string!(#ident_transformed),
+                }
+            }
             (false, None) => quote! { #ident { .. } => #ident_transformed, },
             _ => unreachable!(
                 "`any_has_format` should never be false when a variant has format string"
@@ -187,9 +193,15 @@ impl UnnamedVariantIR {
         let fields = self.fields;
         match (any_has_format, attrs.format) {
             (true, Some(fmt)) => {
-                quote! { #ident(#(#fields),*) => { let variant = #ident_transformed; format!(#fmt) } }
+                quote! {
+                    #ident(#(#fields),*) => enum_display::_variant_format!(#ident_transformed, #fmt),
+                }
             }
-            (true, None) => quote! { #ident(..) => String::from(#ident_transformed), },
+            (true, None) => {
+                quote! {
+                    #ident(..) => enum_display::_variant_string!(#ident_transformed),
+                }
+            }
             (false, None) => quote! { #ident(..) => #ident_transformed, },
             _ => unreachable!(
                 "`any_has_format` should never be false when a variant has format string"
@@ -216,9 +228,15 @@ impl UnitVariantIR {
         } = self.info;
         match (any_has_format, attrs.format) {
             (true, Some(fmt)) => {
-                quote! { #ident => { let variant = #ident_transformed; format!(#fmt) } }
+                quote! {
+                    #ident => enum_display::_variant_format!(#ident_transformed, #fmt),
+                }
             }
-            (true, None) => quote! { #ident => String::from(#ident_transformed), },
+            (true, None) => {
+                quote! {
+                    #ident => enum_display::_variant_string!(#ident_transformed),
+                }
+            }
             (false, None) => quote! { #ident => #ident_transformed, },
             _ => unreachable!(
                 "`any_has_format` should never be false when a variant has format string"
@@ -302,11 +320,6 @@ pub fn derive(input: TokenStream) -> TokenStream {
     // If any variants have a format string, the output of all match arms must be String instead of &str
     // This is because we can't return a reference to the temporary output of format!()
     let any_has_format = intermediate_variants.iter().any(|v| v.has_format());
-    let post_fix = if any_has_format {
-        quote! { .as_str() }
-    } else {
-        quote! {}
-    };
 
     // Build the match arms
     let variants = intermediate_variants
@@ -323,9 +336,9 @@ pub fn derive(input: TokenStream) -> TokenStream {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 ::core::fmt::Formatter::write_str(
                     f,
-                    match self {
+                    &*match self {
                         #(Self::#variants)*
-                    }#post_fix
+                    }
                 )
             }
         }

@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "enum-display-macro"]
+members = [".", "enum-display-macro", "tests/no-std"]
 
 [package]
 name = "enum-display"
@@ -14,3 +14,10 @@ repository = "https://github.com/SeedyROM/enum-display"
 
 [dependencies]
 enum-display-macro = { version = "0.1.5", path = "./enum-display-macro" }
+
+[dev-dependencies]
+no-std = { path = "tests/no-std" }
+
+[features]
+default = ["std"]
+std = []

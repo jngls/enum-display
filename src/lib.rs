@@ -70,9 +70,47 @@
 //! ```
 pub use enum_display_macro::*;
 
+#[cfg(feature = "std")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _variant_format {
+    ($variant:literal, $($arg:tt)*) => {{
+        let variant = $variant;
+        format!($($arg)*)
+    }};
+}
+
+#[cfg(not(feature = "std"))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _variant_format {
+    ($variant:literal, $($arg:tt)*) => {
+        $variant
+    };
+}
+
+#[cfg(feature = "std")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _variant_string {
+    ($variant:literal) => {
+        String::from($variant)
+    };
+}
+
+#[cfg(not(feature = "std"))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _variant_string {
+    ($variant:literal) => {
+        $variant
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate as enum_display;
 
     #[allow(dead_code)]
     #[derive(EnumDisplay)]
